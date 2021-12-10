@@ -1,0 +1,11 @@
+@import "mapbox-gl/dist/mapbox-gl.css";
+@import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
+@import "normalize.css/normalize.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+#container {
+    width: 100%;
+}
