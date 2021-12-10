@@ -1,28 +1,32 @@
 import WorldMapboxDraw from "@mapbox/mapbox-gl-draw";
 import mapboxgl from "mapbox-gl";
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useContext } from "react";
+import MapContext, { MapState } from "./MapContext";
 
 // @ts-ignore
 mapboxgl.accessToken = import.meta.env.SNOWPACK_PUBLIC_ACCESS_TOKEN;
 
 interface WorldMapProps {
+    setMapState: (state: MapState) => void;
     mapStyle: string;
     shouldDraw: boolean;
 }
 
-export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
+export default function WorldMap({
+    setMapState,
+    mapStyle,
+    shouldDraw,
+}: WorldMapProps) {
+    const mapState = useContext(MapContext);
     const container = useRef<HTMLDivElement>(null);
-    const [mapState, setMapState] = useState<{
-        map: mapboxgl.Map;
-        draw: MapboxDraw;
-    }>({ map: null, draw: null });
 
     useEffect(() => {
         if (!container.current) return null;
         const map = new mapboxgl.Map({
             container: container.current, // container ID
             style: mapStyle, // style URL
-            center: [11.970231148670322, 57.69103126724703], // starting position [lng, lat]
+            // center: [11.970231148670322, 57.69103126724703], // starting position [lng, lat]
+            center: [-122.486052, 37.830348],
             zoom: 12, // starting zoom
         });
 
@@ -39,7 +43,38 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
             // defaultMode: "draw_polygon",
         });
 
-        setMapState({ map, draw });
+        map.on("load", () => {
+            draw.add({
+                type: "LineString",
+                coordinates: [
+                    [-122.483696, 37.833818],
+                    [-122.484482, 37.833174],
+                ],
+            });
+            draw.add({
+                type: "LineString",
+                coordinates: [
+                    [-122.484696, 37.833818],
+                    [-122.485482, 37.833174],
+                ],
+            });
+            draw.add({
+                type: "LineString",
+                coordinates: [
+                    [-122.486696, 37.833818],
+                    [-122.488482, 37.833174],
+                ],
+            });
+            draw.add({
+                type: "LineString",
+                coordinates: [
+                    [-122.483696, 37.833818],
+                    [-122.483482, 37.833174],
+                ],
+            });
+            setMapState({ map, draw });
+        });
+
         map.addControl(draw);
     }, [container.current]);
 
