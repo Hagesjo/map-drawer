@@ -1,4 +1,15 @@
-import WorldMapboxDraw from "@mapbox/mapbox-gl-draw";
+import WorldMapboxDraw, {
+    DrawActionableEvent,
+    DrawCombineEvent,
+    DrawCreateEvent,
+    DrawDeleteEvent,
+    DrawEventType,
+    DrawModeChageEvent,
+    DrawRenderEvent,
+    DrawSelectionChangeEvent,
+    DrawUncombineEvent,
+    DrawUpdateEvent,
+} from "@mapbox/mapbox-gl-draw";
 import mapboxgl from "mapbox-gl";
 import React, { useEffect, useRef } from "react";
 import { useMapContext } from "./MapContext";
@@ -10,6 +21,33 @@ interface WorldMapProps {
     mapStyle: string;
     shouldDraw: boolean;
 }
+
+type DrawEvents = {
+    "draw.create": DrawCreateEvent;
+    "draw.delete": DrawDeleteEvent;
+    "draw.update": DrawUpdateEvent;
+    "draw.render": DrawRenderEvent;
+    "draw.combine": DrawCombineEvent;
+    "draw.uncombine": DrawUncombineEvent;
+    "draw.modechange": DrawModeChageEvent;
+    "draw.actionable": DrawActionableEvent;
+    "draw.selectionchange": DrawSelectionChangeEvent;
+};
+
+interface DrawMap {
+    on<T extends DrawEventType>(
+        type: T,
+        listener: (e: DrawEvents[T]) => void
+    ): void;
+}
+
+const modifyingDrawEvents: ReadonlyArray<DrawEventType> = [
+    "draw.create",
+    "draw.delete",
+    "draw.delete",
+    "draw.combine",
+    "draw.uncombine",
+];
 
 export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
     const { mapState, initMapState, setDrawFeatures, setSelectedDrawFeatures } =
@@ -24,7 +62,7 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
             // center: [11.970231148670322, 57.69103126724703], // starting position [lng, lat]
             center: [-122.486052, 37.830348],
             zoom: 12, // starting zoom
-        });
+        }) as DrawMap & mapboxgl.Map;
 
         const draw = new WorldMapboxDraw({
             displayControlsDefault: false,
@@ -83,13 +121,41 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
             });
         });
 
+        modifyingDrawEvents.forEach((type) => {
+            map.on(type, () => {
+                setDrawFeatures(
+                    new Map(
+                        draw
+                            .getAll()
+                            .features.map((feature) => [
+                                feature.id as string,
+                                feature,
+                            ])
+                    )
+                );
+            });
+        });
+
+        map.on("draw.selectionchange", () => {
+            setSelectedDrawFeatures(new Set(draw.getSelectedIds()));
+        });
+
         map.addControl(draw);
     }, [container.current]);
 
     useEffect(() => {
-        if (!mapState.draw) {
-            return;
-        }
+        if (mapState === null) return;
+        const selectedIds = mapState.draw.getSelectedIds();
+        if (
+            mapState.selectedDrawFeatures.size !== selectedIds.length ||
+            !selectedIds.every((id) => mapState.selectedDrawFeatures.has(id))
+        )
+            mapState.draw.changeMode("simple_select", {
+                featureIds: Array.from(mapState.selectedDrawFeatures),
+            });
+    }, [mapState?.selectedDrawFeatures]);
+
+    useEffect(() => {
         if (shouldDraw) {
             mapState?.draw.changeMode("draw_line_string");
         } else {
