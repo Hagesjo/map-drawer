@@ -1,27 +1,23 @@
 import WorldMapboxDraw from "@mapbox/mapbox-gl-draw";
 import mapboxgl from "mapbox-gl";
-import React, { useRef, useEffect, useContext } from "react";
-import MapContext, { MapState } from "./MapContext";
+import React, { useEffect, useRef } from "react";
+import { useMapContext } from "./MapContext";
 
 // @ts-ignore
 mapboxgl.accessToken = import.meta.env.SNOWPACK_PUBLIC_ACCESS_TOKEN;
 
 interface WorldMapProps {
-    setMapState: (state: MapState) => void;
     mapStyle: string;
     shouldDraw: boolean;
 }
 
-export default function WorldMap({
-    setMapState,
-    mapStyle,
-    shouldDraw,
-}: WorldMapProps) {
-    const mapState = useContext(MapContext);
+export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
+    const { mapState, initMapState, setDrawFeatures, setSelectedDrawFeatures } =
+        useMapContext();
     const container = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!container.current) return null;
+        if (!container.current || mapState !== null) return;
         const map = new mapboxgl.Map({
             container: container.current, // container ID
             style: mapStyle, // style URL
@@ -72,7 +68,19 @@ export default function WorldMap({
                     [-122.483482, 37.833174],
                 ],
             });
-            setMapState({ map, draw });
+            initMapState({
+                map,
+                draw,
+                drawFeatures: new Map(
+                    draw
+                        .getAll()
+                        .features.map((feature) => [
+                            feature.id as string,
+                            feature,
+                        ])
+                ),
+                selectedDrawFeatures: new Set(draw.getSelectedIds()),
+            });
         });
 
         map.addControl(draw);
@@ -83,14 +91,14 @@ export default function WorldMap({
             return;
         }
         if (shouldDraw) {
-            mapState.draw.changeMode("draw_line_string");
+            mapState?.draw.changeMode("draw_line_string");
         } else {
-            mapState.draw.changeMode("simple_select");
+            mapState?.draw.changeMode("simple_select");
         }
     }, [shouldDraw]);
 
     useEffect(() => {
-        if (mapState.map) mapState.map.setStyle(mapStyle);
+        mapState?.map.setStyle(mapStyle);
     }, [mapStyle]);
     return <div className="w-full h-full" ref={container}></div>;
 }
