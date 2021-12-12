@@ -1,0 +1,17 @@
+{
+    "include": ["server.ts"],
+    "compilerOptions": {
+        "module": "CommonJS",
+        "target": "esnext",
+        "esModuleInterop": true,
+        "moduleResolution": "node",
+        "baseUrl": "./",
+        "allowSyntheticDefaultImports": true,
+        "importsNotUsedAsValues": "error",
+        /* noEmit - We only use TypeScript for type checking. */
+        "noEmit": true,
+        /* Additional Options */
+        "strict": true,
+        "forceConsistentCasingInFileNames": true
+    }
+}

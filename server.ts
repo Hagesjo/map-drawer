@@ -1,10 +1,10 @@
-const express = require("express");
+import express from "express";
+import http from "http";
+import { loadConfiguration, startServer } from "snowpack";
+import { Server } from "socket.io";
 const app = express();
-const http = require("http");
 const httpServer = http.createServer(app);
-const { Server } = require("socket.io");
 const io = new Server(httpServer, { serveClient: false });
-const { startServer, loadConfiguration } = require("snowpack");
 
 (async () => {
     const snowpackConfig = await loadConfiguration({
@@ -20,8 +20,11 @@ const { startServer, loadConfiguration } = require("snowpack");
     app.use(async (req, res, next) => {
         try {
             const buildResult = await snowpackServer.loadUrl(req.url);
-            res.contentType(buildResult.contentType);
-            res.send(buildResult.contents);
+            if (buildResult) {
+                if (buildResult.contentType)
+                    res.contentType(buildResult.contentType);
+                res.status(200).send(buildResult.contents);
+            }
         } catch (err) {
             next(err);
         }
