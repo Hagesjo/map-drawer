@@ -1,10 +1,12 @@
+import type SocketEvents from "@shared/SocketEvents";
 import express from "express";
 import http from "http";
 import { loadConfiguration, startServer } from "snowpack";
 import { Server } from "socket.io";
+
 const app = express();
 const httpServer = http.createServer(app);
-const io = new Server(httpServer, { serveClient: false });
+const io = new Server<SocketEvents>(httpServer, { serveClient: false });
 
 (async () => {
     const snowpackConfig = await loadConfiguration({
@@ -33,15 +35,15 @@ const io = new Server(httpServer, { serveClient: false });
     io.on("connection", (socket) => {
         console.log("connection", socket.id);
 
-        socket.on("connect", (socket) => {
-            console.log("connect", socket.id);
-        });
-        socket.on("connect_error", (err) => {
-            console.log("connect_error", err);
-        });
         socket.on("disconnect", (reason) => {
             console.log("disconnect", reason);
         });
+
+        setTimeout(() => {
+            socket.emit("hello world", "alert message!!", (n) => {
+                console.log("cb", n);
+            });
+        }, 1000);
     });
 
     httpServer.listen(8080, () => {

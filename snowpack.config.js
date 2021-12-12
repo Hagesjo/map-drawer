@@ -18,12 +18,14 @@ module.exports = {
     buildOptions: {
         /* ... */
     },
-
     mount: {
         src: "/dist",
         public: {
             url: "/",
             static: true,
         },
+    },
+    alias: {
+        "@shared": "shared",
     },
 };

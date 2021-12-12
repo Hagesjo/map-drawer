@@ -1,11 +1,14 @@
 {
-    "include": ["server.ts"],
+    "include": ["src/**/*"],
     "compilerOptions": {
         "module": "CommonJS",
         "target": "esnext",
-        "esModuleInterop": true,
         "moduleResolution": "node",
+        "esModuleInterop": true,
         "baseUrl": "./",
+        "paths": {
+            "@shared/*": ["../shared/*"]
+        },
         "allowSyntheticDefaultImports": true,
         "importsNotUsedAsValues": "error",
         /* noEmit - We only use TypeScript for type checking. */
