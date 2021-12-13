@@ -7,6 +7,17 @@ import App from "./components/App";
 ReactDOM.render(React.createElement(App, null), document.getElementById("app"));
 
 const socket: Socket<SocketEvents> = io();
+
+socket.io.engine.on("upgrade", (transport) => {
+    console.log("upgrade", transport);
+});
+socket.io.engine.on("upgradeError", (err) => {
+    console.log("upgradeError", err);
+});
+socket.io.engine.on("upgrading", (transport) => {
+    console.log("upgrading", transport);
+});
+
 socket.on("connect", () => {
     console.log("connect", socket.id);
 });
