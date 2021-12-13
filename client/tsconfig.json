@@ -1,6 +1,6 @@
 {
     "extends": "../tsconfig.json",
-    "include": ["src/**/*"],
+    "include": ["src/**/*", "../shared/**/*"],
     "compilerOptions": {
         "module": "esnext",
         "jsx": "react",
@@ -12,8 +12,6 @@
             // More info: https://www.snowpack.dev/guides/streaming-imports
             "@shared/*": ["../shared/*"]
         },
-        /* noEmit - We only use TypeScript for type checking. */
-        "noEmit": true,
         /* Additional Options */
         "skipLibCheck": true,
         "resolveJsonModule": true
