@@ -1,4 +1,4 @@
 {
-    "watch": ["server.ts"],
+    "watch": ["src"],
     "ext": "ts"
 }
