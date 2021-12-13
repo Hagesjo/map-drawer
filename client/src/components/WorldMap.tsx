@@ -12,6 +12,7 @@ import WorldMapboxDraw, {
 } from "@mapbox/mapbox-gl-draw";
 import mapboxgl from "mapbox-gl";
 import React, { useEffect, useRef } from "react";
+import socket from "../socket";
 import { useMapContext } from "./MapContext";
 
 // @ts-ignore
@@ -43,7 +44,6 @@ interface DrawMap {
 
 const modifyingDrawEvents: ReadonlyArray<DrawEventType> = [
     "draw.create",
-    "draw.delete",
     "draw.delete",
     "draw.combine",
     "draw.uncombine",
@@ -140,8 +140,43 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
             setSelectedDrawFeatures(new Set(draw.getSelectedIds()));
         });
 
+        map.on("draw.create", (e) => {
+            socket.emit("draw.create", e.features);
+        });
+
+        map.on("draw.delete", (e) => {
+            socket.emit(
+                "draw.delete",
+                e.features.map((feature) => feature.id as string)
+            );
+        });
+
+        socket.on("features", (features) => {
+            setDrawFeatures(
+                new Map(
+                    features.map((feature) => [feature.id as string, feature])
+                )
+            );
+        });
+
         map.addControl(draw);
     }, [container.current]);
+
+    useEffect(() => {
+        if (mapState === null) return;
+        console.log(mapState.drawFeatures);
+        const drawIds = mapState.draw
+            .getAll()
+            .features.map((feature) => feature.id as string);
+        if (
+            mapState.drawFeatures.size !== drawIds.length ||
+            !drawIds.every((id) => mapState.drawFeatures.has(id))
+        )
+            mapState.draw.set({
+                type: "FeatureCollection",
+                features: Array.from(mapState.drawFeatures.values()),
+            });
+    }, [mapState?.drawFeatures]);
 
     useEffect(() => {
         if (mapState === null) return;

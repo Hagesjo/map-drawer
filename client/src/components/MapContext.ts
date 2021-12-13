@@ -36,7 +36,19 @@ export const useMapContextProvider: () => MapContext = () => {
         (drawFeatures: MapState["drawFeatures"]) => {
             setMapState((oldState) => {
                 if (oldState === null) return null;
-                return { ...oldState, drawFeatures };
+                let selectedDrawFeatures = oldState.selectedDrawFeatures;
+                if (
+                    !Array.from(oldState.selectedDrawFeatures).every((id) =>
+                        drawFeatures.has(id)
+                    )
+                ) {
+                    selectedDrawFeatures = new Set(
+                        Array.from(oldState.selectedDrawFeatures).filter((id) =>
+                            drawFeatures.has(id)
+                        )
+                    );
+                }
+                return { ...oldState, drawFeatures, selectedDrawFeatures };
             });
         },
         []
@@ -46,6 +58,11 @@ export const useMapContextProvider: () => MapContext = () => {
         (selectedDrawFeatures: MapState["selectedDrawFeatures"]) => {
             setMapState((oldState) => {
                 if (oldState === null) return null;
+                selectedDrawFeatures = new Set(
+                    Array.from(selectedDrawFeatures).filter((id) =>
+                        oldState.drawFeatures.has(id)
+                    )
+                );
                 return { ...oldState, selectedDrawFeatures };
             });
         },
