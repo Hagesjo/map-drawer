@@ -1,11 +1,10 @@
 {
+    "include": ["shared/**/*"],
     "compilerOptions": {
         "target": "esnext",
         "moduleResolution": "node",
         "allowSyntheticDefaultImports": true,
         "importsNotUsedAsValues": "error",
-        /* noEmit - We only use TypeScript for type checking. */
-        "noEmit": true,
         /* Additional Options */
         "strict": true,
         "forceConsistentCasingInFileNames": true
