@@ -1,20 +1,13 @@
 {
+    "extends": "../tsconfig.json",
     "include": ["src/**/*"],
     "compilerOptions": {
         "module": "CommonJS",
-        "target": "esnext",
-        "moduleResolution": "node",
         "esModuleInterop": true,
         "baseUrl": "./",
         "paths": {
             "@shared/*": ["../shared/*"]
-        },
-        "allowSyntheticDefaultImports": true,
-        "importsNotUsedAsValues": "error",
-        /* noEmit - We only use TypeScript for type checking. */
-        "noEmit": true,
+        }
         /* Additional Options */
-        "strict": true,
-        "forceConsistentCasingInFileNames": true
     }
 }
