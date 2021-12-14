@@ -1,17 +1,21 @@
 {
-    "extends": "../tsconfig.json",
-    "include": ["src/**/*", "../shared/**/*"],
+    "extends": "../tsconfig.base.json",
+    "include": ["src"],
+    "references": [{ "path": "../shared/tsconfig.json" }],
     "compilerOptions": {
-        "module": "esnext",
         "jsx": "react",
         "baseUrl": "./",
+        "rootDir": "src",
         "paths": {
+            "@map-drawer/shared": ["../shared/src/index"],
+            "@map-drawer/shared/*": ["../shared/src/*"]
             // If you configured any Snowpack aliases, add them here.
             // Add this line to get types for streaming imports (packageOptions.source="remote"):
             //     "*": [".snowpack/types/*"]
             // More info: https://www.snowpack.dev/guides/streaming-imports
-            "@shared/*": ["../shared/*"]
         },
+        /* noEmit - We only use TypeScript for type checking. */
+        "noEmit": true,
         /* Additional Options */
         "skipLibCheck": true,
         "resolveJsonModule": true

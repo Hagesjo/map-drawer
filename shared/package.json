@@ -1,0 +1,20 @@
+{
+    "private": true,
+    "name": "@map-drawer/shared",
+    "version": "1.0.0",
+    "description": "",
+    "type": "module",
+    "exports": {
+        ".": "./build/index.js",
+        "./*": "./build/*.js"
+    },
+    "typesVersions": {
+        "*": {
+            "*": [
+                "build/*"
+            ]
+        }
+    },
+    "author": "",
+    "license": "ISC"
+}

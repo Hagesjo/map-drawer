@@ -1,6 +1,8 @@
-import type ClientEvents from "@shared/ClientEvents";
-import type ServerEvents from "@shared/ServerEvents";
-import type WithSockets from "@shared/WithSockets";
+import type {
+    ClientEvents,
+    ServerEvents,
+    WithSockets,
+} from "@map-drawer/shared";
 import express from "express";
 import type { Feature } from "geojson";
 import http from "http";
