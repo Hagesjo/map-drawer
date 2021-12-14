@@ -15,6 +15,9 @@ export default {
     devOptions: {
         tailwindConfig: "./tailwind.config.js",
     },
+    packageOptions: {
+        knownEntrypoints: ["deep-diff", "rfdc"],
+    },
     buildOptions: {
         cacheDirPath: "../node_modules/.cache/snowpack",
     },

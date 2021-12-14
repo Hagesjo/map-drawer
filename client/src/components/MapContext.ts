@@ -4,7 +4,13 @@ import { createContext, useCallback, useContext, useState } from "react";
 interface MapContext {
     mapState: MapState | null;
     initMapState: (state: MapState) => void;
-    setDrawFeatures: (drawFeatures: MapState["drawFeatures"]) => void;
+    setDrawFeatures: (
+        drawFeaturesOrCb:
+            | MapState["drawFeatures"]
+            | ((
+                  oldDrawFeatures: MapState["drawFeatures"]
+              ) => MapState["drawFeatures"])
+    ) => void;
     setSelectedDrawFeatures: (
         selectedDrawFeatures: MapState["selectedDrawFeatures"]
     ) => void;
@@ -24,21 +30,28 @@ export const MapContextProvider = MapContext.Provider;
 export const useMapContextProvider: () => MapContext = () => {
     const [mapState, setMapState] = useState<MapContext["mapState"]>(null);
 
-    const initMapState = useCallback((state: MapState) => {
-        setMapState((oldState) => {
-            if (oldState !== null)
-                throw new Error("mapState already initialized");
-            return state;
-        });
-    }, []);
+    const initMapState = useCallback<MapContext["initMapState"]>(
+        (state: MapState) => {
+            setMapState((oldState) => {
+                if (oldState !== null)
+                    throw new Error("mapState already initialized");
+                return state;
+            });
+        },
+        []
+    );
 
-    const setDrawFeatures = useCallback(
-        (drawFeatures: MapState["drawFeatures"]) => {
+    const setDrawFeatures = useCallback<MapContext["setDrawFeatures"]>(
+        (drawFeaturesOrCb) => {
             setMapState((oldState) => {
                 if (oldState === null) return null;
+                const drawFeatures =
+                    typeof drawFeaturesOrCb === "function"
+                        ? drawFeaturesOrCb(oldState.drawFeatures)
+                        : drawFeaturesOrCb;
                 let selectedDrawFeatures = oldState.selectedDrawFeatures;
                 if (
-                    !Array.from(oldState.selectedDrawFeatures).every((id) =>
+                    !Array.from(selectedDrawFeatures).every((id) =>
                         drawFeatures.has(id)
                     )
                 ) {
@@ -54,20 +67,19 @@ export const useMapContextProvider: () => MapContext = () => {
         []
     );
 
-    const setSelectedDrawFeatures = useCallback(
-        (selectedDrawFeatures: MapState["selectedDrawFeatures"]) => {
-            setMapState((oldState) => {
-                if (oldState === null) return null;
-                selectedDrawFeatures = new Set(
-                    Array.from(selectedDrawFeatures).filter((id) =>
-                        oldState.drawFeatures.has(id)
-                    )
-                );
-                return { ...oldState, selectedDrawFeatures };
-            });
-        },
-        []
-    );
+    const setSelectedDrawFeatures = useCallback<
+        MapContext["setSelectedDrawFeatures"]
+    >((selectedDrawFeatures) => {
+        setMapState((oldState) => {
+            if (oldState === null) return null;
+            selectedDrawFeatures = new Set(
+                Array.from(selectedDrawFeatures).filter((id) =>
+                    oldState.drawFeatures.has(id)
+                )
+            );
+            return { ...oldState, selectedDrawFeatures };
+        });
+    }, []);
 
     return {
         mapState,

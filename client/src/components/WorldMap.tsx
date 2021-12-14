@@ -1,3 +1,5 @@
+import type { SharedState } from "@map-drawer/shared";
+import { stateUpdater } from "@map-drawer/shared";
 import WorldMapboxDraw, {
     DrawActionableEvent,
     DrawCombineEvent,
@@ -78,33 +80,11 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
         });
 
         map.on("load", () => {
-            draw.add({
-                type: "LineString",
-                coordinates: [
-                    [-122.483696, 37.833818],
-                    [-122.484482, 37.833174],
-                ],
-            });
-            draw.add({
-                type: "LineString",
-                coordinates: [
-                    [-122.484696, 37.833818],
-                    [-122.485482, 37.833174],
-                ],
-            });
-            draw.add({
-                type: "LineString",
-                coordinates: [
-                    [-122.486696, 37.833818],
-                    [-122.488482, 37.833174],
-                ],
-            });
-            draw.add({
-                type: "LineString",
-                coordinates: [
-                    [-122.483696, 37.833818],
-                    [-122.483482, 37.833174],
-                ],
+            draw.set({
+                type: "FeatureCollection",
+                features: Object.values(
+                    stateUpdater.state().features as SharedState["features"]
+                ),
             });
             initMapState({
                 map,
@@ -141,20 +121,38 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
         });
 
         map.on("draw.create", (e) => {
+            stateUpdater.addFeatures(e.features);
+            stateUpdater.sync();
             socket.emit("draw.create", e.features);
         });
 
         map.on("draw.delete", (e) => {
-            socket.emit(
-                "draw.delete",
-                e.features.map((feature) => feature.id as string)
+            const ids = e.features.map((feature) => feature.id as string);
+            stateUpdater.removeFeatures(ids);
+            stateUpdater.sync();
+            socket.emit("draw.delete", ids);
+        });
+
+        socket.on("initState", (state) => {
+            stateUpdater.setState(state);
+            stateUpdater.sync();
+            setDrawFeatures(
+                new Map(
+                    Object.entries(
+                        stateUpdater.state().features as SharedState["features"]
+                    )
+                )
             );
         });
 
-        socket.on("features", (features) => {
+        socket.on("updateState", (diffs) => {
+            stateUpdater.apply(diffs);
+            stateUpdater.sync();
             setDrawFeatures(
                 new Map(
-                    features.map((feature) => [feature.id as string, feature])
+                    Object.entries(
+                        stateUpdater.state().features as SharedState["features"]
+                    )
                 )
             );
         });
@@ -164,7 +162,6 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
 
     useEffect(() => {
         if (mapState === null) return;
-        console.log(mapState.drawFeatures);
         const drawIds = mapState.draw
             .getAll()
             .features.map((feature) => feature.id as string);

@@ -1,4 +1,4 @@
-import type { ClientEvents, ServerEvents } from "@map-drawer/shared";
+import { ClientEvents, ServerEvents } from "@map-drawer/shared";
 import io, { Socket } from "socket.io-client";
 
 const socket: Socket<ServerEvents, ClientEvents> = io();
@@ -28,7 +28,8 @@ const serverListener: ServerEvents = {
         alert(payload);
         cb(1337);
     },
-    features: (features) => {},
+    initState: (state) => {},
+    updateState: (diffs) => {},
 };
 socket.onAny((event: string, ...args: any[]) => {
     if (event in serverListener)
