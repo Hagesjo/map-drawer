@@ -1,4 +1,4 @@
-import { ClientEvents, ServerEvents } from "@map-drawer/shared";
+import type { ClientEvents, ServerEvents } from "@map-drawer/shared";
 import io, { Socket } from "socket.io-client";
 
 const socket: Socket<ServerEvents, ClientEvents> = io();
