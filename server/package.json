@@ -6,9 +6,9 @@
     "type": "module",
     "module": "build/index.js",
     "scripts": {
-        "start": "node build/index.js",
+        "start": "node -r source-map-support/register build/index.js",
         "build": "tsc -b --verbose",
-        "dev": "tsc-watch -b --noClear --onSuccess \"node build/index.js\""
+        "dev": "tsc-watch -b --noClear --onSuccess \"npm start\""
     },
     "devDependencies": {
         "@types/express": "^4.17.13",
