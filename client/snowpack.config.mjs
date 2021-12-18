@@ -16,7 +16,12 @@ export default {
         tailwindConfig: "./tailwind.config.js",
     },
     packageOptions: {
+<<<<<<< Updated upstream
         knownEntrypoints: ["deep-diff", "rfdc"],
+=======
+        polyfillNode: true,
+        knownEntrypoints: ["eventemitter3"],
+>>>>>>> Stashed changes
     },
     buildOptions: {
         cacheDirPath: "../node_modules/.cache/snowpack",

@@ -12,6 +12,7 @@ import WorldMapboxDraw, {
     DrawUncombineEvent,
     DrawUpdateEvent,
 } from "@mapbox/mapbox-gl-draw";
+import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import mapboxgl from "mapbox-gl";
 import React, { useEffect, useRef } from "react";
 import socket from "../socket";
@@ -157,6 +158,13 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
             );
         });
 
+        map.addControl(
+            new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                //@ts-ignore
+                mapboxgl: mapboxgl,
+            })
+        );
         map.addControl(draw);
     }, [container.current]);
 
