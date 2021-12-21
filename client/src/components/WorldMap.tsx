@@ -16,6 +16,7 @@ import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import mapboxgl from "mapbox-gl";
 import React, { useEffect, useRef } from "react";
 import socket from "../socket";
+import CoordinateGeocoder from "./CoordinateGeocoder";
 import { useMapContext } from "./MapContext";
 
 // @ts-ignore
@@ -66,6 +67,16 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
             center: [-122.486052, 37.830348],
             zoom: 12, // starting zoom
         }) as DrawMap & mapboxgl.Map;
+
+        const flyto = map.flyTo.bind(map);
+        map.flyTo = (
+            options: mapboxgl.FlyToOptions,
+            eventData?: mapboxgl.EventData
+        ) => {
+            options.speed = (options.speed ?? 1.2) * 3;
+            flyto(options, eventData);
+            return map;
+        };
 
         const draw = new WorldMapboxDraw({
             displayControlsDefault: false,
@@ -163,6 +174,8 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
                 accessToken: mapboxgl.accessToken,
                 //@ts-ignore
                 mapboxgl: mapboxgl,
+                reverseGeocode: true,
+                localGeocoder: CoordinateGeocoder,
             })
         );
         map.addControl(draw);

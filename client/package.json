@@ -30,5 +30,8 @@
         "tailwindcss": "^3.0.0"
     },
     "author": "",
-    "license": "ISC"
+    "license": "ISC",
+    "dependencies": {
+        "mapbox-gl-draw-circle": "^1.1.2"
+    }
 }
