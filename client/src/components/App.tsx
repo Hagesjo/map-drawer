@@ -1,7 +1,9 @@
+import { LngLat } from "mapbox-gl";
 import React, { useCallback, useState } from "react";
 import DrawController from "./DrawController";
+import MapboxGlDraw from "./map/MapboxGlDraw";
+import MapboxGlMap, { MapboxGlProps } from "./map/MapboxGlMap";
 import { MapContextProvider, useMapContextProvider } from "./MapContext";
-import WorldMap from "./WorldMap";
 
 export default function App() {
     const [theme, changeTheme] = useState("mapbox://styles/mapbox/streets-v11");
@@ -13,14 +15,50 @@ export default function App() {
     );
     const mapContext = useMapContextProvider();
 
+    const [mapboxProps, setMapboxProps] = useState<MapboxGlProps>({
+        center: new LngLat(-122.486052, 37.830348),
+        zoom: 12,
+        style: theme,
+    });
+    const setCenter = useCallback<
+        React.Dispatch<React.SetStateAction<MapboxGlProps["center"]>>
+    >((center) => {
+        if (center instanceof Function)
+            setMapboxProps((state) => ({
+                ...state,
+                center: center(state.center),
+            }));
+        else setMapboxProps((state) => ({ ...state, center }));
+    }, []);
+    const setZoom = useCallback<
+        React.Dispatch<React.SetStateAction<MapboxGlProps["zoom"]>>
+    >((zoom) => {
+        if (zoom instanceof Function)
+            setMapboxProps((state) => ({
+                ...state,
+                zoom: zoom(state.zoom),
+            }));
+        else setMapboxProps((state) => ({ ...state, zoom }));
+    }, []);
+
     return (
         <MapContextProvider value={mapContext}>
             <div className="w-full h-full flex">
                 <div className="w-full h-full flex relative">
-                    <WorldMap
+                    {/*<WorldMap
                         shouldDraw={shouldDraw}
                         mapStyle={theme}
-                    ></WorldMap>
+                    ></WorldMap>*/}
+                    <MapboxGlMap
+                        containerProps={{ className: "w-full h-full" }}
+                        mapboxProps={mapboxProps}
+                        listeners={{
+                            center: setCenter,
+                            zoom: setZoom,
+                        }}
+                    >
+                        <MapboxGlDraw></MapboxGlDraw>
+                    </MapboxGlMap>
                 </div>
                 <aside
                     className={`bg-white bg-opacity-[0.85] absolute top-0 left-0 bottom-0 flex flex-col transition-all ${
@@ -62,6 +100,24 @@ export default function App() {
                         <DrawController
                             shouldDraw={setShouldDrawFunc}
                         ></DrawController>
+                        <button
+                            onClick={() =>
+                                setCenter(
+                                    (state) =>
+                                        new LngLat(
+                                            state.lng + 0.01,
+                                            state.lat + 0.01
+                                        )
+                                )
+                            }
+                        >
+                            Move
+                        </button>
+                        <span>
+                            [{mapboxProps.center.lng.toFixed(2)},{" "}
+                            {mapboxProps.center.lat.toFixed(2)}]
+                        </span>
+                        <span>{mapboxProps.zoom.toFixed(2)}</span>
                     </div>
                 </aside>
             </div>
