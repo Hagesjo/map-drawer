@@ -15,6 +15,8 @@ import WorldMapboxDraw, {
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import mapboxgl from "mapbox-gl";
 import React, { useEffect, useRef } from "react";
+import DragCircleMode from "../modes/DragCircle";
+import RadiusMode from "../modes/RadiusMode";
 import socket from "../socket";
 import CoordinateGeocoder from "./CoordinateGeocoder";
 import { useMapContext } from "./MapContext";
@@ -86,9 +88,18 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
                 line_string: true,
                 trash: true,
             },
+            userProperties: true,
+            modes: {
+                ...WorldMapboxDraw.modes,
+                drag_circle: DragCircleMode,
+                radius_circle: RadiusMode,
+                // drag_circle: DragCircleMode,
+                // direct_select: DirectMode,
+                // simple_select: SimpleSelectMode,
+            },
             // Set mapbox-gl-draw to draw by default.
             // The user does not have to click the polygon control button first.
-            // defaultMode: "draw_polygon",
+            defaultMode: "radius_circle",
         });
 
         map.on("load", () => {
@@ -210,7 +221,7 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
 
     useEffect(() => {
         if (shouldDraw) {
-            mapState?.draw.changeMode("draw_line_string");
+            mapState?.draw.changeMode("radius_circle" as any);
         } else {
             mapState?.draw.changeMode("simple_select");
         }
