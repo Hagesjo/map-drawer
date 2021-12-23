@@ -1,0 +1,41 @@
+{
+    "version": 8,
+    "sources": {
+        "land": {
+            "type": "geojson",
+            "data": "/land.json"
+        },
+        "erland": {
+            "type": "image",
+            "url": "/erland.gif",
+            "coordinates": [
+                [-180, 85],
+                [180, 85],
+                [180, -85],
+                [-180, -85]
+            ]
+        }
+    },
+    "layers": [
+        {
+            "id": "background",
+            "type": "background",
+            "paint": {
+                "background-color": "#72d0f2"
+            }
+        },
+        {
+            "id": "erland",
+            "type": "raster",
+            "source": "erland"
+        },
+        {
+            "id": "land",
+            "type": "fill",
+            "source": "land",
+            "paint": {
+                "fill-color": "#f0e9e1"
+            }
+        }
+    ]
+}
