@@ -19,6 +19,7 @@ export default function App() {
         center: new LngLat(-122.486052, 37.830348),
         zoom: 12,
         style: theme,
+        testMode: true,
     });
     const setCenter = useCallback<
         React.Dispatch<React.SetStateAction<MapboxGlProps["center"]>>

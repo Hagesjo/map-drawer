@@ -5,7 +5,7 @@ import type {
     Dispatch,
     HTMLAttributes,
     ReactNode,
-    SetStateAction,
+    SetStateAction
 } from "react";
 import React, {
     createContext,
@@ -14,7 +14,7 @@ import React, {
     useEffect,
     useMemo,
     useRef,
-    useState,
+    useState
 } from "react";
 
 function usePrevious<T>(value: T) {
@@ -191,9 +191,8 @@ type AllDivProps = DetailedHTMLProps<
 >;
 
 export type MapboxGlContainerProps = Pick<AllDivProps, "className"> | undefined;
-export type MapboxGlProps = Required<
-    Pick<MapboxOptions, "zoom" | "style"> & { center: LngLat }
->;
+export type MapboxGlProps = Required<Pick<MapboxOptions, "zoom" | "style">> &
+    Pick<MapboxOptions, "testMode"> & { center: LngLat };
 
 export interface MapboxGlMapProps {
     containerProps: MapboxGlContainerProps;
