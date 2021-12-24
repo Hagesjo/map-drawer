@@ -2,7 +2,8 @@ import { LngLat } from "mapbox-gl";
 import React, { useCallback, useState } from "react";
 import DrawController from "./DrawController";
 import MapboxGlDraw from "./map/MapboxGlDraw";
-import MapboxGlMap, { MapboxGlProps } from "./map/MapboxGlMap";
+import type { MapboxGlProps } from "./map/MapboxGlMap";
+import MapboxGlMap from "./map/MapboxGlMap";
 import { MapContextProvider, useMapContextProvider } from "./MapContext";
 
 export default function App() {
@@ -20,7 +21,7 @@ export default function App() {
         zoom: 0,
         //style: theme,
         style: "/erland.style.json",
-        testMode: true,
+        testMode: import.meta.env.MODE === "development",
     });
     const setCenter = useCallback<
         React.Dispatch<React.SetStateAction<MapboxGlProps["center"]>>

@@ -5,7 +5,7 @@ import type {
     Dispatch,
     HTMLAttributes,
     ReactNode,
-    SetStateAction
+    SetStateAction,
 } from "react";
 import React, {
     createContext,
@@ -14,7 +14,7 @@ import React, {
     useEffect,
     useMemo,
     useRef,
-    useState
+    useState,
 } from "react";
 
 function usePrevious<T>(value: T) {
@@ -118,9 +118,7 @@ function simplePropHandler<E extends keyof MapEventType, T>(
     };
 }
 
-MapboxGl.accessToken = (
-    import.meta as unknown as { env: { SNOWPACK_PUBLIC_ACCESS_TOKEN: string } }
-).env.SNOWPACK_PUBLIC_ACCESS_TOKEN;
+MapboxGl.accessToken = import.meta.env.SNOWPACK_PUBLIC_ACCESS_TOKEN;
 
 interface MapboxGlMapContextState {
     map: MapboxGl.Map | undefined;
