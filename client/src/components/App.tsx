@@ -16,9 +16,10 @@ export default function App() {
     const mapContext = useMapContextProvider();
 
     const [mapboxProps, setMapboxProps] = useState<MapboxGlProps>({
-        center: new LngLat(-122.486052, 37.830348),
-        zoom: 12,
-        style: theme,
+        center: new LngLat(0, 0),
+        zoom: 0,
+        //style: theme,
+        style: "/erland.style.json",
         testMode: true,
     });
     const setCenter = useCallback<
