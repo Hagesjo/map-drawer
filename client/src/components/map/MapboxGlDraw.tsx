@@ -1,8 +1,8 @@
 import { useEffect } from "react";
-import { useMapboxGlMapContext } from "./MapboxGlMap";
+import { useMapboxGlContext } from "./MapboxGlContext";
 
 export default function MapboxGlDraw() {
-    const state = useMapboxGlMapContext();
+    const state = useMapboxGlContext();
     useEffect(() => {
         console.log("draw got state", state);
     }, [state]);

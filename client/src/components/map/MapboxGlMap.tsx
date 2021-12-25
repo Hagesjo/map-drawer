@@ -8,7 +8,6 @@ import type {
     SetStateAction,
 } from "react";
 import React, {
-    createContext,
     useCallback,
     useContext,
     useEffect,
@@ -16,6 +15,13 @@ import React, {
     useRef,
     useState,
 } from "react";
+import {
+    MapboxGlContext,
+    MapboxGlContextProvider,
+    useMapboxGlContext,
+} from "./MapboxGlContext";
+
+export type UseState<S> = [S, Dispatch<SetStateAction<S>>];
 
 function usePrevious<T>(value: T) {
     const ref = useRef<T>();
@@ -26,18 +32,26 @@ function usePrevious<T>(value: T) {
 }
 
 type PropHandler<T> = (
-    map: MapboxGl.Map | undefined,
+    ctx: MapboxGlContext,
     prop: T,
-    onChange: ((value: T) => void) | undefined
-) => [T, Dispatch<SetStateAction<T>>];
+    onChange: OnPropChange<T> | undefined
+) => UseState<T>;
 
-function simplePropHandler<E extends keyof MapEventType, T>(
-    type: E,
+type OnPropChange<T> = (value: T) => void;
+
+function simplePropHandler<
+    K extends keyof MapboxGlProps,
+    T extends MapboxGlProps[K]
+>(
+    propKey: K,
+    type: keyof MapEventType,
     getMapProp: (map: MapboxGl.Map) => T,
     setMapProp: (map: MapboxGl.Map, prop: T) => any,
     comparator: (prev: T, next: T) => boolean = Object.is
 ): PropHandler<T> {
-    return (map, prop, onChange) => {
+    return (ctx, prop, onChange) => {
+        const [ctxState, setCtxState] = ctx;
+        const map = ctxState?.map;
         const [state, setState] = useState({
             truth: false, // true if the value came from the actual map
             value: prop,
@@ -87,6 +101,19 @@ function simplePropHandler<E extends keyof MapEventType, T>(
             onChange(state.value);
         }, [state.value, previousOnChange, onChange]);
 
+        // Update context when state.value changes
+        useEffect(() => {
+            setCtxState((oldCtx) => {
+                if (oldCtx === null) return null;
+                const newCtx = { ...oldCtx };
+                newCtx[propKey] = [
+                    state.value,
+                    setValue,
+                ] as typeof newCtx[typeof propKey];
+                return newCtx;
+            });
+        }, [state.value]);
+
         // Propagate changes in state.value into the map
         const previousState = usePrevious(state);
         useEffect(() => {
@@ -120,69 +147,6 @@ function simplePropHandler<E extends keyof MapEventType, T>(
 
 MapboxGl.accessToken = import.meta.env.SNOWPACK_PUBLIC_ACCESS_TOKEN;
 
-interface MapboxGlMapContextState {
-    map: MapboxGl.Map | undefined;
-    center?: ReturnType<typeof mapPropHandlers["center"]>;
-    zoom?: ReturnType<typeof mapPropHandlers["zoom"]>;
-}
-
-type MapboxGlContextReactState = [
-    MapboxGlMapContextState | null,
-    Dispatch<SetStateAction<MapboxGlMapContextState | null>>
-];
-
-const MapboxGlMapContext = createContext<MapboxGlContextReactState | undefined>(
-    undefined
-);
-
-export function MapboxGlMapContextProvider({
-    children,
-}: {
-    children?: ReactNode;
-}) {
-    const [state, setState] = useState<MapboxGlMapContextState | null>(null);
-    const value = useMemo<MapboxGlContextReactState>(() => {
-        return [state, setState];
-    }, [state]);
-
-    return (
-        <MapboxGlMapContext.Provider value={value}>
-            {children}
-        </MapboxGlMapContext.Provider>
-    );
-}
-
-export function _useMapboxGlMapContext() {
-    const ctx = useContext(MapboxGlMapContext);
-    if (ctx === undefined)
-        throw new Error("Missing MapboxGlMapContext.Provider");
-    return ctx;
-}
-
-export function useMapboxGlMapContext(): MapboxGlMapContextState | null {
-    return _useMapboxGlMapContext()[0];
-}
-
-const mapPropHandlers: {
-    [K in keyof MapboxGlProps]: PropHandler<MapboxGlProps[K]>;
-} = {
-    center: simplePropHandler(
-        "move",
-        (map) => map.getCenter(),
-        (map, center) => map.setCenter(center),
-        (prev, next) =>
-            Object.is(prev.lat, next.lat) && Object.is(prev.lng, next.lng)
-    ),
-    zoom: simplePropHandler(
-        "zoom",
-        (map) => map.getZoom(),
-        (map, zoom) => map.setZoom(zoom)
-    ),
-    style: () => {
-        throw new Error("TODO");
-    },
-};
-
 type AllDivProps = DetailedHTMLProps<
     HTMLAttributes<HTMLDivElement>,
     HTMLDivElement
@@ -204,15 +168,37 @@ export interface MapboxGlMapProps {
     children?: ReactNode;
 }
 
+const mapPropHandlers: {
+    [K in keyof MapboxGlProps]: PropHandler<MapboxGlProps[K]>;
+} = {
+    center: simplePropHandler(
+        "center",
+        "move",
+        (map) => map.getCenter(),
+        (map, center) => map.setCenter(center),
+        (prev, next) =>
+            Object.is(prev.lat, next.lat) && Object.is(prev.lng, next.lng)
+    ),
+    zoom: simplePropHandler(
+        "zoom",
+        "zoom",
+        (map) => map.getZoom(),
+        (map, zoom) => map.setZoom(zoom)
+    ),
+    style: () => {
+        throw new Error("TODO");
+    },
+};
+
 export default function MapboxGlMap(props: MapboxGlMapProps) {
-    const ctx = useContext(MapboxGlMapContext);
+    const ctx = useContext(MapboxGlContext);
     if (ctx !== undefined) {
         return <_MapboxGlMap {...props}></_MapboxGlMap>;
     }
     return (
-        <MapboxGlMapContextProvider>
+        <MapboxGlContextProvider>
             <_MapboxGlMap {...props}></_MapboxGlMap>
-        </MapboxGlMapContextProvider>
+        </MapboxGlContextProvider>
     );
 }
 
@@ -224,7 +210,7 @@ function _MapboxGlMap({
     children,
 }: MapboxGlMapProps) {
     const container = useRef<HTMLDivElement>(null);
-    const [state, setState] = _useMapboxGlMapContext();
+    const [state, setState] = useMapboxGlContext();
 
     const shouldListen = useMemo(() => {
         const listenKeys = Object.keys(
@@ -269,8 +255,8 @@ function _MapboxGlMap({
         const handler = mapPropHandlers[key] as PropHandler<typeof prop>;
         const onChange = (
             listeners === undefined ? undefined : listeners[key]
-        ) as ((value: typeof prop) => void) | undefined;
-        handler(state?.map, prop, onChange);
+        ) as OnPropChange<typeof prop> | undefined;
+        handler([state, setState], prop, onChange);
     });
 
     useEffect(() => {
