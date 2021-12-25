@@ -5,7 +5,7 @@
 import MapboxDraw, { DrawCustomMode } from "@mapbox/mapbox-gl-draw";
 import lineDistance from "@turf/length";
 
-const ActualDrawModes = MapboxDraw.modes as unknown as Record<
+const ActualDrawModes = (MapboxDraw.modes as unknown) as Record<
     MapboxDraw.DrawMode,
     DrawCustomMode
 >;
@@ -23,12 +23,12 @@ function createVertex(
             meta: "vertex",
             parent: parentId,
             coord_path: path,
-            active: selected ? "true" : "false",
+            active: selected ? "true" : "false"
         },
         geometry: {
             type: "Point",
-            coordinates,
-        },
+            coordinates
+        }
     };
 }
 
@@ -38,11 +38,11 @@ function createGeoJSONCircle(
     center: any,
     radiusInKm: any,
     parentId: any,
-    points = 64
+    points = 128
 ) {
     const coords = {
         latitude: center[1],
-        longitude: center[0],
+        longitude: center[0]
     };
 
     const km = radiusInKm;
@@ -68,11 +68,14 @@ function createGeoJSONCircle(
         type: "Feature",
         geometry: {
             type: "Polygon",
-            coordinates: [ret],
+            coordinates: [ret]
         },
         properties: {
             parent: parentId,
-        },
+            active: "true",
+            radius_km: radiusInKm.toFixed(3),
+            radius_miles: (radiusInKm / 1.609).toFixed(3)
+        }
     };
 }
 
@@ -114,7 +117,7 @@ function getDisplayMeasurements(feature: any) {
         //     standardFormat
         // )} ${standardUnits}`,
         metric: "Din mamma",
-        standard: "Din pappa",
+        standard: "Din pappa"
     };
 
     return displayMeasurements;
@@ -137,16 +140,15 @@ const doubleClickZoom = {
                 return;
             ctx.map.doubleClickZoom.enable();
         }, 0);
-    },.
+    }
 };
 
-RadiusMode.onClick = function (state: any, e: any) {
-    console.log("tjenna");
+RadiusMode.onClick = function(state: any, e: any) {
     // this ends the drawing after the user creates a second point, triggering this.onStop
     if (state.currentVertexPosition === 1) {
         state.line.addCoordinate(0, e.lngLat.lng, e.lngLat.lat);
         return this.changeMode("simple_select", {
-            featureIds: [state.line.id],
+            featureIds: [state.line.id]
         });
     }
     this.updateUIClasses({ mouse: "add" });
@@ -171,7 +173,7 @@ RadiusMode.onClick = function (state: any, e: any) {
 
 // creates the final geojson point feature with a radius property
 // triggers draw.create
-RadiusMode.onStop = function (state: any) {
+RadiusMode.onStop = function(state: any) {
     doubleClickZoom.enable(this);
 
     this.activateUIButton();
@@ -184,27 +186,34 @@ RadiusMode.onStop = function (state: any) {
     if (state.line.isValid()) {
         const lineGeoJson = state.line.toGeoJSON();
         // reconfigure the geojson line into a geojson point with a radius property
-        const pointWithRadius = {
-            type: "Feature",
-            geometry: {
-                type: "Point",
-                coordinates: lineGeoJson.geometry.coordinates[0],
-            },
-            properties: {
-                radius: (lineDistance(lineGeoJson) * 1000).toFixed(1),
-            },
-        };
+        // const pointWithRadius = {
+        //     type: "Feature",
+        //     geometry: {
+        //         type: "Point",
+        //         coordinates: lineGeoJson.geometry.coordinates[0]
+        //     },
+        //     properties: {
+        //         radius: (lineDistance(lineGeoJson) * 1000).toFixed(1)
+        //     }
+        // };
+        const pointWithRadius = createGeoJSONCircle(
+            lineGeoJson.geometry.coordinates[0],
+            lineDistance(lineGeoJson),
+            null,
+            64
+        );
 
         (this as any).map.fire("draw.create", {
-            features: [pointWithRadius],
+            features: [pointWithRadius]
         });
+        // this.addFeature(pointWithRadius);
     } else {
         this.deleteFeature(state.line.id, { silent: true });
         this.changeMode("simple_select", {}, { silent: true });
     }
 };
 
-RadiusMode.toDisplayFeatures = function (
+RadiusMode.toDisplayFeatures = function(
     state: any,
     geojson: any,
     display: any
@@ -247,12 +256,12 @@ RadiusMode.toDisplayFeatures = function (
             meta: "currentPosition",
             radiusMetric: displayMeasurements.metric,
             radiusStandard: displayMeasurements.standard,
-            parent: state.line.id,
+            parent: state.line.id
         },
         geometry: {
             type: "Point",
-            coordinates: geojson.geometry.coordinates[1],
-        },
+            coordinates: geojson.geometry.coordinates[1]
+        }
     };
     display(currentVertex);
 

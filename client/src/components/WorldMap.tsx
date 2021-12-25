@@ -1,19 +1,8 @@
 import type { SharedState } from "@map-drawer/shared";
 import { stateUpdater } from "@map-drawer/shared";
-import WorldMapboxDraw, {
-    DrawActionableEvent,
-    DrawCombineEvent,
-    DrawCreateEvent,
-    DrawDeleteEvent,
-    DrawEventType,
-    DrawModeChageEvent,
-    DrawRenderEvent,
-    DrawSelectionChangeEvent,
-    DrawUncombineEvent,
-    DrawUpdateEvent,
-} from "@mapbox/mapbox-gl-draw";
+import WorldMapboxDraw, { DrawActionableEvent, DrawCombineEvent, DrawCreateEvent, DrawDeleteEvent, DrawEventType, DrawModeChageEvent, DrawRenderEvent, DrawSelectionChangeEvent, DrawUncombineEvent, DrawUpdateEvent } from "@mapbox/mapbox-gl-draw";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
-import mapboxgl from "mapbox-gl";
+import mapboxgl, { MapboxGeoJSONFeature } from "mapbox-gl";
 import React, { useEffect, useRef } from "react";
 import DragCircleMode from "../modes/DragCircle";
 import RadiusMode from "../modes/RadiusMode";
@@ -59,6 +48,7 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
     const { mapState, initMapState, setDrawFeatures, setSelectedDrawFeatures } =
         useMapContext();
     const container = useRef<HTMLDivElement>(null);
+    let timeoutID: NodeJS.Timeout
 
     useEffect(() => {
         if (!container.current || mapState !== null) return;
@@ -101,6 +91,35 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
             // The user does not have to click the polygon control button first.
             defaultMode: "radius_circle",
         });
+        map.on("mousemove", (e) => {
+            // very temporary lab, should reactify this
+            const features = map.queryRenderedFeatures(e.point)
+            let currentDrawing: MapboxGeoJSONFeature | undefined;
+            features.forEach(f => {
+                if (f.layer.id.includes("gl-draw-polygon-stroke")) {
+                    currentDrawing = f;
+                }
+            });
+            if (currentDrawing !== undefined) {
+                let measure = document.querySelector("#donthatemeraffe") as any;
+                measure.style.visibility = "visible";
+                measure.style.left = e.originalEvent.clientX + "px";
+                measure.style.top = e.originalEvent.clientY + 10 + "px";
+                let km = document.querySelector("#measure-km") as any;
+                let miles = document.querySelector("#measure-miles") as any;
+                if (currentDrawing.layer.id.includes("cold")) {
+                    km.innerText = (currentDrawing as any).properties.user_radius_km + " km";
+                    miles.innerText = (currentDrawing as any).properties.user_radius_miles + " miles";
+                } else {
+                    km.innerText = (currentDrawing as any).properties.radius_km + " km";
+                    miles.innerText = (currentDrawing as any).properties.radius_miles + " miles";
+                }
+            } else {
+                let measure = document.querySelector("#donthatemeraffe") as any;
+                clearTimeout(timeoutID)
+                timeoutID = setTimeout(() => {measure.style.visibility = "hidden"}, 2000);
+            }
+        })
 
         map.on("load", () => {
             draw.set({
@@ -144,6 +163,9 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
         });
 
         map.on("draw.create", (e) => {
+            let measure = document.querySelector("#donthatemeraffe") as any;
+            measure.style.visibility = "hidden";
+
             stateUpdater.addFeatures(e.features);
             stateUpdater.sync();
             socket.emit("draw.create", e.features);
@@ -230,7 +252,13 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
     useEffect(() => {
         mapState?.map.setStyle(mapStyle);
     }, [mapStyle]);
-    return <div className="w-full h-full" ref={container}></div>;
+    return <div className="w-full h-full">
+        <div className="w-full h-full" ref={container}></div>
+        <div id="donthatemeraffe" className="absolute pointer-events-none bg-white/50 p-1 ">
+            <p id="measure-km"></p>
+            <p id="measure-miles"></p>
+        </div>
+    </div>;
 }
 
 // setTimeout(() => map.setStyle("mapbox://styles/mapbox/dark-v10"), 3000)

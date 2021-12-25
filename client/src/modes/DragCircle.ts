@@ -1,29 +1,29 @@
 import MapboxDraw, {
     DrawActionableState,
-    DrawCustomMode,
+    DrawCustomMode
 } from "@mapbox/mapbox-gl-draw";
 import circle from "@turf/circle";
 import distance from "@turf/distance";
 import * as turfHelpers from "@turf/helpers";
 
-const ActualDrawModes = MapboxDraw.modes as unknown as Record<
+const ActualDrawModes = (MapboxDraw.modes as unknown) as Record<
     MapboxDraw.DrawMode,
     DrawCustomMode
 >;
 const DragCircleMode = { ...ActualDrawModes.draw_polygon };
 export default DragCircleMode;
 
-DragCircleMode.onSetup = function (opts) {
+DragCircleMode.onSetup = function(opts) {
     const polygon = this.newFeature({
         type: "Feature",
         properties: {
             isCircle: true,
-            center: [],
+            center: []
         },
         geometry: {
             type: "Polygon",
-            coordinates: [[]],
-        },
+            coordinates: [[]]
+        }
     });
 
     this.addFeature(polygon);
@@ -33,16 +33,16 @@ DragCircleMode.onSetup = function (opts) {
     this.updateUIClasses({ mouse: "add" });
     this.activateUIButton("Polygon");
     this.setActionableState({
-        trash: true,
+        trash: true
     } as DrawActionableState);
 
     return {
         polygon,
-        currentVertexPosition: 0,
+        currentVertexPosition: 0
     };
 };
 
-DragCircleMode.onMouseDown = DragCircleMode.onTouchStart = function (
+DragCircleMode.onMouseDown = DragCircleMode.onTouchStart = function(
     state,
     e: any
 ) {
@@ -52,7 +52,7 @@ DragCircleMode.onMouseDown = DragCircleMode.onTouchStart = function (
     }
 };
 
-DragCircleMode.onDrag = DragCircleMode.onMouseMove = function (state, e: any) {
+DragCircleMode.onDrag = DragCircleMode.onMouseMove = function(state, e: any) {
     const center = state.polygon.properties.center;
     if (center.length > 0) {
         const distanceInKm = distance(
@@ -66,20 +66,17 @@ DragCircleMode.onDrag = DragCircleMode.onMouseMove = function (state, e: any) {
     }
 };
 
-DragCircleMode.onMouseUp = DragCircleMode.onTouchEnd = function (
-    state,
-    e: any
-) {
+DragCircleMode.onMouseUp = DragCircleMode.onTouchEnd = function(state, e: any) {
     enable(this);
     return this.changeMode("simple_select", { featureIds: [state.polygon.id] });
 };
 
-DragCircleMode.onClick = DragCircleMode.onTap = function (state, e: any) {
+DragCircleMode.onClick = DragCircleMode.onTap = function(state, e: any) {
     // don't draw the circle if its a tap or click event
     state.polygon.properties.center = [];
 };
 
-DragCircleMode.toDisplayFeatures = function (state, geojson, display) {
+DragCircleMode.toDisplayFeatures = function(state, geojson, display) {
     if ("properties" in geojson && geojson.properties !== null) {
         const isActivePolygon = geojson.properties.id === state.polygon.id;
         geojson.properties.active = isActivePolygon ? "true" : "false";
