@@ -1,5 +1,10 @@
 import type { Map } from "mapbox-gl";
-import type { ReactNode } from "react";
+import type {
+    ComponentType,
+    JSXElementConstructor,
+    ReactElement,
+    ReactNode,
+} from "react";
 import React, { createContext, useContext, useMemo, useState } from "react";
 import type { MapboxGlProps, UseState } from "./MapboxGlMap";
 
@@ -36,4 +41,27 @@ export function useMapboxGlContext() {
     const ctx = useContext(MapboxGlContext);
     if (ctx === undefined) throw new Error("Missing MapboxGlContextProvider");
     return ctx;
+}
+
+export interface MapboxGlContextConsumer {
+    mapboxGlListeners?: (keyof MapboxGlProps)[];
+}
+
+export function withMapboxGlContext<T extends ComponentType>(
+    node: T,
+    ...listeners: (keyof MapboxGlProps)[]
+) {
+    const withNode: T & MapboxGlContextConsumer = node;
+    withNode.mapboxGlListeners = listeners;
+    return withNode;
+}
+
+export function isMapboxGlContextConsumer(
+    node: ReactElement<any, JSXElementConstructor<any>>
+): node is ReactElement<
+    any,
+    JSXElementConstructor<any> & Required<MapboxGlContextConsumer>
+> {
+    const key: keyof MapboxGlContextConsumer = "mapboxGlListeners";
+    return key in node.type;
 }

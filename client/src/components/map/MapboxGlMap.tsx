@@ -4,6 +4,9 @@ import type {
     DetailedHTMLProps,
     Dispatch,
     HTMLAttributes,
+    JSXElementConstructor,
+    PropsWithChildren,
+    ReactElement,
     ReactNode,
     SetStateAction,
 } from "react";
@@ -16,6 +19,7 @@ import React, {
     useState,
 } from "react";
 import {
+    isMapboxGlContextConsumer,
     MapboxGlContext,
     MapboxGlContextProvider,
     useMapboxGlContext,
@@ -165,7 +169,7 @@ export interface MapboxGlMapProps {
             | ((value: MapboxGlProps[K]) => void);
     };
     listenToAllChanges?: boolean;
-    children?: ReactNode;
+    children: ReactNode;
 }
 
 const mapPropHandlers: {
@@ -212,12 +216,24 @@ function _MapboxGlMap({
     const container = useRef<HTMLDivElement>(null);
     const [state, setState] = useMapboxGlContext();
 
+    const childListeners = useMemo(() => {
+        return new Set(
+            flatMap(
+                (child) => child.type.mapboxGlListeners,
+                filter(
+                    isMapboxGlContextConsumer,
+                    iterateComponentChildren(children)
+                )
+            )
+        );
+    }, [children]);
+
     const shouldListen = useMemo(() => {
         const listenKeys = Object.keys(
             mapPropHandlers
         ) as (keyof MapboxGlProps)[];
-        return listenKeys
-            .filter((key) => {
+        return new Set(
+            listenKeys.filter((key) => {
                 if (listenToAllChanges) return true;
                 if (listeners === undefined) return false;
                 const listener = listeners[key];
@@ -225,21 +241,26 @@ function _MapboxGlMap({
                 if (listener instanceof Function) return true;
                 return listener;
             })
-            .sort();
+        );
     }, [listenToAllChanges, listeners]);
-    const previousShouldListen = usePrevious(shouldListen);
+
+    const allListeners = useMemo(() => {
+        return Array.from(new Set([...childListeners, ...shouldListen])).sort();
+    }, [childListeners, shouldListen]);
+
+    const previousAllListeners = usePrevious(allListeners);
     useEffect(() => {
-        if (previousShouldListen === undefined) return;
+        if (previousAllListeners === undefined) return;
         if (
-            previousShouldListen.length === shouldListen.length &&
-            previousShouldListen.every(
-                (previous, idx) => previous === shouldListen[idx]
+            previousAllListeners.length === allListeners.length &&
+            previousAllListeners.every(
+                (previous, idx) => previous === allListeners[idx]
             )
         )
             return;
 
-        const diff = new Set(previousShouldListen);
-        shouldListen.forEach((listen) => {
+        const diff = new Set(previousAllListeners);
+        allListeners.forEach((listen) => {
             if (diff.has(listen)) diff.delete(listen);
             else diff.add(listen);
         });
@@ -248,7 +269,7 @@ function _MapboxGlMap({
                 diff
             )}`
         );
-    }, [previousShouldListen, shouldListen]);
+    }, [previousAllListeners, allListeners]);
 
     shouldListen.forEach((key) => {
         const prop = mapboxProps[key];
@@ -276,4 +297,49 @@ function _MapboxGlMap({
             {children}
         </div>
     );
+}
+
+function* iterateComponentChildren(
+    node: ReactNode
+): Generator<ReactElement<any, JSXElementConstructor<any>>> {
+    if (node === undefined || node === null) return;
+    if (!(node instanceof Object)) return;
+    if (isIterable(node)) {
+        // Fragments
+        for (const child of node) {
+            for (const nextNode of iterateComponentChildren(child)) {
+                yield nextNode;
+            }
+        }
+    } else if ("children" in node) {
+        // ReactPortal
+        for (const nextNode of iterateComponentChildren(node.children))
+            yield nextNode;
+    } else if ("type" in node) {
+        // Normal component
+        const type = node.type;
+        // Don't scan other contexts
+        if (type !== MapboxGlContext.Provider) {
+            if (typeof type === "function") {
+                yield node as ReactElement<any, typeof type>;
+            }
+            if ("children" in node.props) {
+                const props: PropsWithChildren<unknown> = node.props;
+                for (const child of iterateComponentChildren(props.children))
+                    yield child;
+            }
+        }
+    }
+}
+
+function* flatMap<T, R>(f: (x: T) => Iterable<R>, it: Generator<T>) {
+    for (const x of it) for (const y of f(x)) yield y;
+}
+
+function* filter<T, S extends T>(f: (x: T) => x is S, it: Generator<T>) {
+    for (const x of it) if (f(x)) yield x;
+}
+
+function isIterable<T>(obj: Object): obj is Iterable<T> {
+    return Symbol.iterator in obj;
 }

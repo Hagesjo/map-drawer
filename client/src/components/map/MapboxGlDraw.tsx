@@ -1,10 +1,6 @@
-import { useEffect } from "react";
-import { useMapboxGlContext } from "./MapboxGlContext";
+import { useMapboxGlContext, withMapboxGlContext } from "./MapboxGlContext";
 
-export default function MapboxGlDraw() {
-    const state = useMapboxGlContext();
-    useEffect(() => {
-        console.log("draw got state", state);
-    }, [state]);
+export default withMapboxGlContext(function MapboxGlDraw() {
+    const ctx = useMapboxGlContext();
     return null;
-}
+}, "zoom");
