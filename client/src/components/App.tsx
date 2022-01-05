@@ -7,10 +7,10 @@ export default function App() {
     const [theme, changeTheme] = useState("mapbox://styles/mapbox/streets-v11");
     const [shouldDraw, setShouldDraw] = useState(false);
     const [expanded, setExpanded] = useState(true);
-    const setShouldDrawFunc = useCallback(
-        () => setShouldDraw(!shouldDraw),
-        [shouldDraw]
-    );
+    const setShouldDrawFunc = useCallback(() => {
+        console.log(!shouldDraw);
+        setShouldDraw(!shouldDraw);
+    }, [shouldDraw]);
     const mapContext = useMapContextProvider();
 
     return (
@@ -45,9 +45,7 @@ export default function App() {
                     </button>
                     <div className="flex flex-col px-8 pt-5">
                         <select
-                            onChange={(event) =>
-                                changeTheme(event.target.value)
-                            }
+                            onChange={event => changeTheme(event.target.value)}
                         >
                             <option value="mapbox://styles/mapbox/streets-v11">
                                 Light theme

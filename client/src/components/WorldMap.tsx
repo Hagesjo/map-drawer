@@ -53,11 +53,11 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
     useEffect(() => {
         if (!container.current || mapState !== null) return;
         const map = new mapboxgl.Map({
-            container: container.current,
-            // style: mapStyle,
-            style: "/erland.style.json",
-            center: [0, 0],
-            zoom: 0,
+            container: container.current, // container ID
+            style: mapStyle, // style URL
+            // center: [11.970231148670322, 57.69103126724703], // starting position [lng, lat]
+            center: [-122.486052, 37.830348],
+            zoom: 12, // starting zoom
         }) as DrawMap & mapboxgl.Map;
 
         const flyto = map.flyTo.bind(map);
@@ -93,13 +93,37 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
         });
         map.on("mousemove", (e) => {
             // very temporary lab, should reactify this
-            const features = map.queryRenderedFeatures(e.point)
+            const intervalVal = 20
+            // hack to check close intervals, otherwise distance might be a pixel off or so
+            let intervals: [number, number][] = [
+                [-intervalVal, -intervalVal],
+                [0, -intervalVal],
+                [intervalVal, -intervalVal],
+
+                [-intervalVal, 0],
+                [0, 0],
+                [intervalVal, 0],
+
+                [-intervalVal, intervalVal],
+                [0, intervalVal],
+                [intervalVal, intervalVal],
+            ]
             let currentDrawing: MapboxGeoJSONFeature | undefined;
-            features.forEach(f => {
-                if (f.layer.id.includes("gl-draw-polygon-stroke")) {
-                    currentDrawing = f;
+            for (let i of intervals) {
+                let point: [number, number] = [e.point.x + i[0], e.point.y + i[1]];
+                const features = map.queryRenderedFeatures(point)
+                let found = false
+                for (let f of features) {
+                    if (f.layer.id.includes("gl-draw-polygon-stroke")) {
+                        currentDrawing = f;
+                        found = true;
+                        break;
+                    }
                 }
-            });
+                if (found) {
+                    break;
+                }
+            }
             if (currentDrawing !== undefined) {
                 let measure = document.querySelector("#donthatemeraffe") as any;
                 measure.style.visibility = "visible";

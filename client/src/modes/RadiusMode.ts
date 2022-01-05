@@ -9,7 +9,7 @@ const ActualDrawModes = (MapboxDraw.modes as unknown) as Record<
     MapboxDraw.DrawMode,
     DrawCustomMode
 >;
-const RadiusMode = ActualDrawModes.draw_line_string;
+const RadiusMode = { ...ActualDrawModes.draw_polygon };
 
 function createVertex(
     parentId: any,
@@ -143,6 +143,34 @@ const doubleClickZoom = {
     }
 };
 
+RadiusMode.onSetup = function(opts) {
+    const polygon = this.newFeature({
+        type: "Feature",
+        properties: {
+            isCircle: true,
+            center: []
+        },
+        geometry: {
+            type: "Polygon",
+            coordinates: [[]]
+        }
+    });
+
+    // this.addFeature(polygon);
+
+    // this.clearSelectedFeatures();
+    this.updateUIClasses({ mouse: "add" });
+    this.activateUIButton("Polygon");
+    // this.setActionableState({
+    //     trash: true
+    // } as DrawActionableState);
+
+    return {
+        polygon,
+        currentVertexPosition: 0
+    };
+};
+
 RadiusMode.onClick = function(state: any, e: any) {
     // this ends the drawing after the user creates a second point, triggering this.onStop
     if (state.currentVertexPosition === 1) {
@@ -152,6 +180,11 @@ RadiusMode.onClick = function(state: any, e: any) {
         });
     }
     this.updateUIClasses({ mouse: "add" });
+    const currentCenter = state.polygon.properties.center;
+    if (currentCenter.length === 0) {
+        state.polygon.properties.center = [e.lngLat.lng, e.lngLat.lat];
+    }
+    return;
     state.line.updateCoordinate(
         state.currentVertexPosition,
         e.lngLat.lng,
@@ -179,6 +212,7 @@ RadiusMode.onStop = function(state: any) {
     this.activateUIButton();
 
     // check to see if we've deleted this feature
+    return;
     if (this.getFeature(state.line.id) === undefined) return;
 
     // remove last added coordinate
@@ -206,7 +240,9 @@ RadiusMode.onStop = function(state: any) {
         (this as any).map.fire("draw.create", {
             features: [pointWithRadius]
         });
-        // this.addFeature(pointWithRadius);
+        // MapboxDraw.DrawFeature;
+        let aoeu = this.newFeature(pointWithRadius as GeoJSON.GeoJSON);
+        this.addFeature(aoeu);
     } else {
         this.deleteFeature(state.line.id, { silent: true });
         this.changeMode("simple_select", {}, { silent: true });
@@ -218,7 +254,17 @@ RadiusMode.toDisplayFeatures = function(
     geojson: any,
     display: any
 ) {
-    const isActiveLine = geojson.properties.id === state.line.id;
+    if ("properties" in geojson && geojson.properties !== null) {
+        const isActivePolygon = geojson.properties.id === state.polygon.id;
+        geojson.properties.active = isActivePolygon ? "true" : "false";
+    }
+    if ("center" in state.polygon.properties) {
+        if (state.polygon.properties.center.length > 0) {
+            return display(geojson);
+        }
+    }
+    const isActiveLine =
+        "line" in state && geojson.properties.id === state.line.id;
     geojson.properties.active = isActiveLine ? "true" : "false";
     if (!isActiveLine) return display(geojson);
 
