@@ -53,11 +53,11 @@ export default function WorldMap({ mapStyle, shouldDraw }: WorldMapProps) {
     useEffect(() => {
         if (!container.current || mapState !== null) return;
         const map = new mapboxgl.Map({
-            container: container.current,
-            // style: mapStyle,
-            style: "/erland.style.json",
-            center: [0, 0],
-            zoom: 0,
+            container: container.current, // container ID
+            style: mapStyle, // style URL
+            // center: [11.970231148670322, 57.69103126724703], // starting position [lng, lat]
+            center: [-122.486052, 37.830348],
+            zoom: 12, // starting zoom
         }) as DrawMap & mapboxgl.Map;
 
         const flyto = map.flyTo.bind(map);
